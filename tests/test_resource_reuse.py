@@ -102,11 +102,7 @@ def legacy_bundle(store):
 
 class ResourceReuseTests(unittest.TestCase):
     def setUp(self):
-        runtime = patch.dict(publish.ci.CONFIG, upstream_commit='a' * 40, build_label='v1.0.20')
-        runtime.start(); self.addCleanup(runtime.stop)
         # Test publication must not append fake links or paths to the real runner.
-        guard = patch.object(publish, 'require_private', return_value='owner/repo')
-        guard.start(); self.addCleanup(guard.stop)
         isolated = patch.dict(os.environ, {'GITHUB_ENV': '', 'GITHUB_STEP_SUMMARY': ''})
         isolated.start()
         self.addCleanup(isolated.stop)
@@ -209,9 +205,9 @@ class ResourceReuseTests(unittest.TestCase):
                 report = {k: publish.ci.CONFIG[k] for k in ('game_version', 'switch_version', 'upstream_commit')}
                 report.update(ipa_bytes=len(content), ipa_sha256=digest, input_revision='revision-1')
                 packages = []
-                for name, minimum in ((publish.ci.ipa_names()[0], '26.0'), (publish.ci.ipa_names()[1], '18.0')):
+                for name, minimum, shell_key in ((publish.ci.ipa_names()[0], '26.0', 'shell_sha256'), (publish.ci.ipa_names()[1], '18.0', 'ios18_shell_sha256')):
                     (output / name).write_bytes(content)
-                    packages.append(dict(report, ipa_name=name, minimum_os=minimum, native_built_from_source=True, payload_verified=True))
+                    packages.append(dict(report, ipa_name=name, minimum_os=minimum, shell_sha256=publish.ci.CONFIG[shell_key]))
                 report['packages'] = packages
                 (output / 'build-report.json').write_text(json.dumps(report))
                 (output / 'SHA256SUMS.txt').write_text(''.join(f"{digest}  {r['ipa_name']}\n" for r in packages))
@@ -219,7 +215,7 @@ class ResourceReuseTests(unittest.TestCase):
                 with patch.object(publish, 'verify_legacy_reference', return_value=None):
                     release = publish.main('ipa')
                 self.assertEqual(store.latest, release['tag_name'])
-                self.assertEqual(release['tag_name'], 'v1.0.20')
+                self.assertEqual(release['tag_name'], publish.ci.upstream_version())
                 notes = (stage / 'RELEASE.md').read_text()
                 for name in publish.ci.ipa_names():
                     self.assertIn(name, notes)

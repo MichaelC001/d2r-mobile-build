@@ -13,7 +13,6 @@ import ci
 import export_resources
 import publish_release as publish
 import release_notes
-from repository_access import require_private
 
 PACK = ci.DM / 'build/legacy/pack'
 ZIP_NAME = 'Legacy-Device-Pack.zip'
@@ -32,7 +31,7 @@ def ensure_converter():
         path = CONVERTER / name
         digest = config['sources'][name]
         if not path.exists() or ci.sha256(path) != digest:
-            ci.download(f"https://raw.githubusercontent.com/{config['repository']}/"
+            ci.download(f"https://raw.githubusercontent.com/{ci.CONFIG['upstream_repository']}/"
                         f"{config['commit']}/{name}", path, digest)
 
 
@@ -169,7 +168,7 @@ def publish_pack(repo, recipe_id, tag):
 
 
 def main():
-    repo = require_private()
+    repo = os.environ['GITHUB_REPOSITORY']
     publish.OUT.mkdir(exist_ok=True)
     publish.STAGE.mkdir(exist_ok=True)
     ensure_converter()
