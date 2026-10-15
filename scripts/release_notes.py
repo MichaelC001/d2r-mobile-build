@@ -24,12 +24,12 @@ def ipa(repo, config, reference, legacy=None):
     if legacy:
         url = next(a['url'] for a in legacy['assets'] if a['name'] == 'Legacy-Device-Pack.zip')
         english_legacy = (
-            '### A16 and earlier devices\n\n'
+            '### A14–A16 devices\n\n'
             f'Also download [Legacy-Device-Pack.zip]({url}), extract it, and copy the entire '
             '`Legacy Device Pack` folder into the app beside `D2R Mobile Resources`. '
             'Both IPA variants use this pack. A17 Pro and newer devices and M-series iPads do not need it.\n\n')
         chinese_legacy = (
-            '### A16 及更早设备\n\n'
+            '### A14–A16设备\n\n'
             f'还需下载 [Legacy-Device-Pack.zip]({url})，解压后将整个 `Legacy Device Pack` 文件夹'
             '与 `D2R Mobile Resources` 并排导入。两份 IPA 共用本补充包；A17 Pro 及更新芯片和 M 系列 iPad 无需导入。\n\n')
     english = (
@@ -82,13 +82,13 @@ def data(repo, manifest):
 
 def legacy(repo, archive='Legacy-Device-Pack.zip'):
     english = (
-        'Additional textures for A16 and earlier devices, shared by both system variants of the IPA.\n\n'
+        'Additional textures for A14–A16 devices, shared by both system variants of the IPA.\n\n'
         f'Download `{archive}`, extract it, and copy the entire `Legacy Device Pack` folder '
         'into the app beside `D2R Mobile Resources`.\n\n'
         'Use an IPA Release that links to this pack. For detailed instructions, '
         f'see the [README](https://github.com/{repo}#readme).\n')
     chinese = (
-        'A16 及更早设备的配套贴图补充包，两种系统版本的 IPA 共用。\n\n'
+        'A14–A16设备的配套贴图补充包，两种系统版本的 IPA 共用。\n\n'
         f'下载 `{archive}`，解压后把整个 `Legacy Device Pack` 文件夹与 '
         '`D2R Mobile Resources` 并排放进应用。\n\n'
         f'请使用引用本包的 IPA。详细使用方式参考 [中文 README](https://github.com/{repo}/blob/main/README.zh-CN.md)。\n')

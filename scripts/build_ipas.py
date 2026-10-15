@@ -12,7 +12,7 @@ import zipfile
 import ci
 
 VARIANTS = tuple(zip(ci.ipa_names(),
-                     ('D2RMobile-shell.ipa', 'D2RMobile-shell-ios18.ipa'),
+                     ci.SHELL_NAMES,
                      ('26.0', '18.0')))
 
 

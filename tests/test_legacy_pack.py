@@ -139,6 +139,7 @@ class LegacyPackTests(unittest.TestCase):
             with zipfile.ZipFile(shell, 'w') as z:
                 for n, b in entries.items(): z.writestr(n, b)
             entries.update({'Payload/Game.app/Frameworks/Guest.framework/Guest': struct.pack('<II', 0xfeedfacf, 0x0100000c),
+                            'Payload/Game.app/dm/pack_info.txt': b'PRODUCT=test\n',
                             'Payload/Game.app/msl/b-chain/test_b.metallib': b'source',
                             'Payload/Game.app/romfs_overlay_astc/pack.json': (root / 'pack/pack.json').read_bytes(),
                             'Payload/Game.app/romfs_overlay_astc/data/a.data': b'overlay',
@@ -151,6 +152,21 @@ class LegacyPackTests(unittest.TestCase):
             self.assertTrue(report['native_matches_shell'])
             self.assertEqual(report['native_minimum_os'], '18.0.0')
             self.assertTrue(report['compatibility_no_metal4'])
+            self.assertTrue(report['pack_info_verified'])
+            self.assertEqual(report['pack_product'], 'test')
+            for record in (None, b'PRODUCT=wrong\n', b'invalid', b'PRODUCT=test\nPRODUCT=test\n', b'\xff'):
+                with self.subTest(pack_info=record):
+                    invalid = dict(entries)
+                    if record is None:
+                        invalid.pop('Payload/Game.app/dm/pack_info.txt')
+                    else:
+                        invalid['Payload/Game.app/dm/pack_info.txt'] = record
+                    with zipfile.ZipFile(ipa, 'w') as z:
+                        for n, b in invalid.items(): z.writestr(n, b)
+                    with self.assertRaisesRegex(ValueError, 'pack metadata'):
+                        ci.verify_ipa(ipa, shell, '18.0', root / 'pack')
+            with zipfile.ZipFile(ipa, 'w') as z:
+                for n, b in entries.items(): z.writestr(n, b)
             with self.assertRaisesRegex(ValueError, 'minimum system'):
                 ci.verify_ipa(ipa, shell, '26.0', root / 'pack')
             (root / 'pack/pack.json').write_text(json.dumps(dict(info, sha256='0' * 64)))

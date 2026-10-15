@@ -21,8 +21,9 @@ GAME = DM / 'data/switch/3.3.94012/Update'
 TOOLS = ROOT / '.tools'
 WORK = ROOT / '.downloads'
 RAW = ROOT / '.game-downloads'
-SHELL = TOOLS / 'D2RMobile-shell.ipa'
-PUBLIC_SHELL = DM / 'build/pack/D2RMobile-public-shell.ipa'
+SHELL_NAMES = ('D2RMobile-shell-build-input.zip', 'D2RMobile-shell-ios18-build-input.zip')
+SHELL = TOOLS / SHELL_NAMES[0]
+PUBLIC_SHELL = DM / 'build/pack/D2RMobile-public-shell-build-input.zip'
 
 
 def upstream_version(config=None):
@@ -83,7 +84,7 @@ def shell_info(path):
 def ensure_shell():
     if not SHELL.exists() or sha256(SHELL) != CONFIG['shell_sha256']:
         download(CONFIG['shell_url'], SHELL, CONFIG['shell_sha256'])
-    other = TOOLS / 'D2RMobile-shell-ios18.ipa'
+    other = TOOLS / SHELL_NAMES[1]
     if not other.exists() or sha256(other) != CONFIG['ios18_shell_sha256']:
         download(CONFIG['ios18_shell_url'], other, CONFIG['ios18_shell_sha256'])
     info = shell_info(SHELL)
@@ -491,6 +492,15 @@ def verify_ipa(output=None, shell_path=SHELL, minimum_os=None, legacy_pack=None)
         required = public_manifest(shell.read(base + 'dm/shell_manifest.txt'))
         if z.read(base + 'dm/shell_manifest.txt').decode().splitlines() != required:
             raise ValueError('Final IPA content manifest differs from the verified public shell')
+        if z.read(base + 'dm/shell_info.txt') != shell.read(base + 'dm/shell_info.txt'):
+            raise ValueError('Final IPA shell metadata differs from the verified public shell')
+        try:
+            pack_lines = z.read(base + 'dm/pack_info.txt').decode().splitlines()
+        except (KeyError, UnicodeError):
+            raise ValueError('Missing or invalid IPA pack metadata') from None
+        products = [line.removeprefix('PRODUCT=') for line in pack_lines if line.startswith('PRODUCT=')]
+        if products != [info['PRODUCT']]:
+            raise ValueError('IPA pack metadata PRODUCT differs from the verified public shell')
         for item in required:
             item = item.strip()
             if not item:
@@ -508,7 +518,8 @@ def verify_ipa(output=None, shell_path=SHELL, minimum_os=None, legacy_pack=None)
     digest = sha256(output)
     (output.parent / 'SHA256SUMS.txt').write_text(f'{digest}  {output.name}\n')
     report = {'upstream_commit': CONFIG['upstream_commit'], 'game_version': CONFIG['game_version'], 'switch_version': CONFIG['switch_version'], 'input_revision': os.environ.get('INPUT_REVISION'), 'shell_sha256': sha256(shell_path), 'minimum_os': actual_os, 'ipa_name': output.name, 'product': info['PRODUCT'], 'shader_chain': info['CHAIN'], 'shader_source_sha16': info['SHADER_SRC'], 'ipa_sha256': digest, 'ipa_bytes': output.stat().st_size, 'shader_libraries': len(shader_files), 'signed': False, 'startup_prefetch': False, 'startup_prefetch_reason': 'The pinned official public shell omits the unpublished bootlist; the host supports no prefetch when absent.'}
-    report.update(native_matches_shell=True, native_sha256=hashlib.sha256(native).hexdigest(),
+    report.update(pack_info_verified=True, pack_product=products[0],
+                  native_matches_shell=True, native_sha256=hashlib.sha256(native).hexdigest(),
                   native_minimum_os='.'.join(map(str, native_os)), guest_arm64=True,
                   compatibility_no_metal4=(b'MTL4CommandQueue' not in native) if native_os[0] == 18 else None)
     (output.parent / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')

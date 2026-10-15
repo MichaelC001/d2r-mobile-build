@@ -133,7 +133,7 @@ def write_install_guide(destination, reference=None):
         '打开应用点击重试，等待首次着色器编译完成。配套 Data 不变时无需重新导入。\n'
         'IPA 可使用 Sideloadly、iloader、AltStore Classic 或 SideStore 签名安装，工具链接见 README。\n'
         f'{standard} 用于 iOS 26+；{compatibility} 用于 iOS 18–25。\n'
-        'A16 及更早设备还需下载本 IPA Release 正文链接的 Legacy-Device-Pack.zip，解压后将 Legacy Device Pack 文件夹与 D2R Mobile Resources 并排导入。\n'
+        'A14–A16设备还需下载本 IPA Release 正文链接的 Legacy-Device-Pack.zip，解压后将 Legacy Device Pack 文件夹与 D2R Mobile Resources 并排导入。\n'
         '首次着色器编译参考：iPhone 17 Pro Max 约 6 分钟。当前版本包尚未进行真机运行验证。\n')
     return path
 
